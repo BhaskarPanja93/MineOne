@@ -28,7 +28,7 @@ Download the .zip or .7z file from [Releases](https://github.com/BhaskarPanja93/
 2. Clone or download this repository and open its project folder in Unity Hub.
 3. In Unity, link the project to a Unity Cloud project and make sure Unity Authentication and Multiplayer Services / Relay are available. MineOne uses anonymous sign-in and Relay to create and join online sessions, so an internet connection is required.
 
-The host can choose a board from 10×10 up to 100×100, in steps of five. The project includes a Windows build profile, but no ready-to-download build is published with the repository. A build can be made from the Unity Editor after the Unity Services setup above.
+The host can choose a board from 10×10 up to 100×100, in steps of five. The project also includes a Windows build profile. A build can be made from the Unity Editor after the Unity Services setup above.
 
 ## What makes it different?
 
