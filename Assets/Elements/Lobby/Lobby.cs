@@ -29,7 +29,7 @@ public class Lobby: NetworkBehaviour
         
         
         // Recreate
-        foreach (var player in SessionManager.PlayersList)
+        foreach (var player in SessionManager.Singleton.playersList)
         {
             var go = Instantiate(playerPrefab, playerList.transform);
             go.name = player.ClientId.ToString(); // Save GO name as ClientId for a future Find() call
@@ -46,7 +46,7 @@ public class Lobby: NetworkBehaviour
     // Update the start button text and interactivity based on number of players
     private void UpdatePlayableButton()
     {
-        if (SessionManager.PlayersList.Count > 1)
+        if (SessionManager.Singleton.playersList.Count > 1)
         {
             startButton.transform.GetChild(0).GetComponent<TMP_Text>().text = NetworkManager.Singleton.IsServer ? "Start Game" : "Waiting for host to start";
             startButton.GetComponent<Button>().interactable = NetworkManager.Singleton.IsServer;
@@ -121,8 +121,8 @@ public class Lobby: NetworkBehaviour
     // Limit to upper bound of 100
     private void IncreaseSize()
     {
-        if (SessionManager.GridSize.Value >= 100) return;
-        SessionManager.GridSize.Value += 5;
+        if (SessionManager.Singleton.gridSize.Value >= 100) return;
+        SessionManager.Singleton.gridSize.Value += 5;
     }
 
     
@@ -130,15 +130,15 @@ public class Lobby: NetworkBehaviour
     // Limit to lower bound of 5
     private void DecreaseSize()
     {
-        if (SessionManager.GridSize.Value <= 10) return;
-        SessionManager.GridSize.Value -= 5;
+        if (SessionManager.Singleton.gridSize.Value <= 10) return;
+        SessionManager.Singleton.gridSize.Value -= 5;
     }
 
     
     // Callback for game start button
     private void StartGame()
     {
-        SessionManager.GameStarted.Value = true;
+        SessionManager.Singleton.gameStarted.Value = true;
         NetworkManager.Singleton.SceneManager.LoadScene("Game", LoadSceneMode.Single);
     }
     
@@ -157,7 +157,7 @@ public class Lobby: NetworkBehaviour
             increaseSizeButton.onClick.AddListener(IncreaseSize);
             decreaseSizeButton.interactable = true;
             decreaseSizeButton.onClick.AddListener(DecreaseSize);
-            if (SessionManager.GridSize.Value < 10) SessionManager.GridSize.Value = 10;
+            if (SessionManager.Singleton.gridSize.Value < 10) SessionManager.Singleton.gridSize.Value = 10;
         }
         else
         {
@@ -173,11 +173,11 @@ public class Lobby: NetworkBehaviour
         
         
         // Add NetworkVariable change callbacks
-        SessionManager.PlayersList.OnListChanged += OnPlayersChanged;
-        SessionManager.JoinCode.OnValueChanged += OnJoinCodeChanged;
-        joinCodeText.text = SessionManager.JoinCode.Value.ToString();
-        SessionManager.GridSize.OnValueChanged += OnGridSizeChanged;
-        sizeText.text = SessionManager.GridSize.Value.ToString();
+        SessionManager.Singleton.playersList.OnListChanged += OnPlayersChanged;
+        SessionManager.Singleton.joinCode.OnValueChanged += OnJoinCodeChanged;
+        joinCodeText.text = SessionManager.Singleton.joinCode.Value.ToString();
+        SessionManager.Singleton.gridSize.OnValueChanged += OnGridSizeChanged;
+        sizeText.text = SessionManager.Singleton.gridSize.Value.ToString();
         
         
         // Initial UI recreation
@@ -194,8 +194,8 @@ public class Lobby: NetworkBehaviour
         increaseSizeButton.onClick.RemoveAllListeners();
         decreaseSizeButton.onClick.RemoveAllListeners();
         startButton.GetComponent<Button>().onClick.RemoveAllListeners();
-        SessionManager.PlayersList.OnListChanged -= OnPlayersChanged;
-        SessionManager.JoinCode.OnValueChanged -= OnJoinCodeChanged;
-        SessionManager.GridSize.OnValueChanged -= OnGridSizeChanged;
+        SessionManager.Singleton.playersList.OnListChanged -= OnPlayersChanged;
+        SessionManager.Singleton.joinCode.OnValueChanged -= OnJoinCodeChanged;
+        SessionManager.Singleton.gridSize.OnValueChanged -= OnGridSizeChanged;
     }
 }

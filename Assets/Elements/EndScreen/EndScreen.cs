@@ -24,13 +24,13 @@ public class EndScreen : NetworkBehaviour
         // Reset state for all players if play again is pressed
         if (NetworkManager.Singleton.IsServer)
         {
-            SessionManager.GameStarted.Value = false;
-            for (var i = 0; i < SessionManager.PlayersList.Count; i++)
+            SessionManager.Singleton.gameStarted.Value = false;
+            for (var i = 0; i < SessionManager.Singleton.playersList.Count; i++)
             {
-                var playerData = SessionManager.PlayersList[i];
+                var playerData = SessionManager.Singleton.playersList[i];
                 playerData.PlayableState = PlayableStates.Playable;
                 playerData.Score = 0;
-                SessionManager.PlayersList[i] = playerData;
+                SessionManager.Singleton.playersList[i] = playerData;
             }
             NetworkManager.Singleton.SceneManager.LoadScene("Lobby", LoadSceneMode.Single);
         }
@@ -52,7 +52,7 @@ public class EndScreen : NetworkBehaviour
         
         
         // Sort all players by their scores
-        var playersSorted = new List<PlayerData>(SessionManager.PlayersList.AsNativeArray())
+        var playersSorted = new List<PlayerData>(SessionManager.Singleton.playersList.AsNativeArray())
             .OrderByDescending(p => p.Score)
             .ToList();
         

@@ -30,7 +30,7 @@ public class Game: NetworkBehaviour
         
         
         _remainingCoveredCells = 0;
-        var size = SessionManager.GridSize.Value;
+        var size = SessionManager.Singleton.gridSize.Value;
         var totalCells = size * size;
         var firstClickRow = firstClickIndex / size;
         var firstClickColumn = firstClickIndex % size;
@@ -94,9 +94,9 @@ public class Game: NetworkBehaviour
 
         
         // Modify the NetworkList
-        SessionManager.Cells.Clear();
+        SessionManager.Singleton.cells.Clear();
         for (var i = 0; i < totalCells; i++)
-            SessionManager.Cells.Add(cells[i]);
+            SessionManager.Singleton.cells.Add(cells[i]);
 
         
         _generatedCells = true;
@@ -144,7 +144,7 @@ public class Game: NetworkBehaviour
         }
 
         // Finally fetch the cell data
-        var cellData = SessionManager.Cells[cellIndex];
+        var cellData = SessionManager.Singleton.cells[cellIndex];
         
         
         // If bomb clicked
@@ -154,10 +154,10 @@ public class Game: NetworkBehaviour
             
             // Disqualify player
             playerData.PlayableState = PlayableStates.Disqualified;
-            for (var i = 0; i < SessionManager.PlayersList.Count; i++)
+            for (var i = 0; i < SessionManager.Singleton.playersList.Count; i++)
             {
-                if (playerData.ClientId == SessionManager.PlayersList[i].ClientId)
-                    SessionManager.PlayersList[i] = playerData;
+                if (playerData.ClientId == SessionManager.Singleton.playersList[i].ClientId)
+                    SessionManager.Singleton.playersList[i] = playerData;
             }
             
             
@@ -191,16 +191,16 @@ public class Game: NetworkBehaviour
         // Reveal a cell 
         void RevealCell(int index)
         {
-            if (index < 0 || index >= SessionManager.Cells.Count)
+            if (index < 0 || index >= SessionManager.Singleton.cells.Count)
                 return;
             
             
-            var cell = SessionManager.Cells[index];
+            var cell = SessionManager.Singleton.cells[index];
             if (cell.IsBomb || cell.RevealedBy != 0)
                 return;
 
             cell.RevealedBy = playerData.ClientId;
-            SessionManager.Cells[index] = cell;
+            SessionManager.Singleton.cells[index] = cell;
             _remainingCoveredCells -= 1;
             if (_remainingCoveredCells <= 0)
             {
@@ -215,14 +215,14 @@ public class Game: NetworkBehaviour
         RevealCell(cellIndex);
 
         
-        var size = SessionManager.GridSize.Value;
+        var size = SessionManager.Singleton.gridSize.Value;
 
         
         // Continue while there's cells in the stack
         while (stack.Count > 0)
         {
             var index = stack.Pop();
-            var cell = SessionManager.Cells[index];
+            var cell = SessionManager.Singleton.cells[index];
 
             playerData.Score += cell.Points;
 
@@ -251,10 +251,10 @@ public class Game: NetworkBehaviour
         
         
         // Update player data (score)
-        for (var i = 0; i < SessionManager.PlayersList.Count; i++)
+        for (var i = 0; i < SessionManager.Singleton.playersList.Count; i++)
         {
-            if (playerData.ClientId == SessionManager.PlayersList[i].ClientId)
-                SessionManager.PlayersList[i] = playerData;
+            if (playerData.ClientId == SessionManager.Singleton.playersList[i].ClientId)
+                SessionManager.Singleton.playersList[i] = playerData;
         }
     }
     
@@ -335,8 +335,6 @@ public class Game: NetworkBehaviour
     private void RegisterNewClickRpc(int cellIndex, RpcParams rpcParams = default)
     {
         
-        Debug.Log("RegisterNewClickRpc");
-        
         
         // Fetch the caller's ClientId
         var sender = rpcParams.Receive.SenderClientId + 1;
@@ -384,17 +382,17 @@ public class Game: NetworkBehaviour
        
         
         // Clear cells data if player is server
-        if (IsServer) SessionManager.Cells.Clear();
+        if (IsServer) SessionManager.Singleton.cells.Clear();
         _remainingPlayablePlayers = 0;
         
         
         // Attach callbacks
-        SessionManager.Cells.OnListChanged += CallbackCellsChanged;
-        SessionManager.PlayersList.OnListChanged += CallbackPlayerChanged;
+        SessionManager.Singleton.cells.OnListChanged += CallbackCellsChanged;
+        SessionManager.Singleton.playersList.OnListChanged += CallbackPlayerChanged;
         
         
         // Create UI for each player (playable)
-        foreach (var playerData in SessionManager.PlayersList)
+        foreach (var playerData in SessionManager.Singleton.playersList)
         {
             if (playerData.PlayableState != PlayableStates.Playable) continue;
             _remainingPlayablePlayers++;
@@ -408,23 +406,25 @@ public class Game: NetworkBehaviour
         
         // Set cell grid size and properties
         var grid = cellList.GetComponent<GridLayoutGroup>();
-        var cellSize = cellList.GetComponent<RectTransform>().rect.width / SessionManager.GridSize.Value;
-        grid.constraintCount = SessionManager.GridSize.Value;
+        var cellSize = cellList.GetComponent<RectTransform>().rect.width / SessionManager.Singleton.gridSize.Value;
+        grid.constraintCount = SessionManager.Singleton.gridSize.Value;
         grid.cellSize = new Vector2(cellSize, cellSize);
 
         
         // Create all the cell buttons
-        for (var i = 0; i < SessionManager.GridSize.Value * SessionManager.GridSize.Value; i++)
+        for (var i = 0; i < SessionManager.Singleton.gridSize.Value * SessionManager.Singleton.gridSize.Value; i++)
         {
             var index = i;
             var cellUI = Instantiate(cellPrefab, cellList.transform);
+            cellUI.GetComponent<Flag>().cellIndex = index;
             cellUI.transform.GetChild(0).GetComponent<TMP_Text>().fontSize = cellSize * 0.8f;
             cellUI.GetComponent<Button>().onClick.AddListener(() =>
             {
                 
                 
-                // Small local-side check to ignore click if a cell was already revealed
-                if (SessionManager.Cells.Count > index && SessionManager.Cells[index].RevealedBy > 0) return;
+                // Small local-side check to ignore click if a cell was already revealed or if LocalPlayer is in unplayable state
+                if (SessionManager.Singleton.cells.Count > index && SessionManager.Singleton.cells[index].RevealedBy > 0) return;
+                if (SessionManager.Players[SessionManager.LocalPlayer.ClientId].PlayableState != PlayableStates.Playable) return;
                 RegisterNewClickRpc(index);
             });
         }
@@ -434,7 +434,7 @@ public class Game: NetworkBehaviour
     // Run when network session ends
     public override void OnNetworkDespawn()
     {
-        SessionManager.Cells.OnListChanged -= CallbackCellsChanged;
-        SessionManager.PlayersList.OnListChanged -= CallbackPlayerChanged;
+        SessionManager.Singleton.cells.OnListChanged -= CallbackCellsChanged;
+        SessionManager.Singleton.playersList.OnListChanged -= CallbackPlayerChanged;
     }
 }

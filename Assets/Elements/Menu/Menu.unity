@@ -773,7 +773,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkManager
   NetworkManagerExpanded: 0
   NetworkConfig:
-    ProtocolVersion: 0
+    ProtocolVersion: 1
     NetworkTransport: {fileID: 288303403}
     PlayerPrefab: {fileID: 0}
     Prefabs:
@@ -800,7 +800,7 @@ MonoBehaviour:
     NetworkProfilingMetrics: 0
     OldPrefabList: []
   RunInBackground: 1
-  LogLevel: 0
+  LogLevel: 2
 --- !u!114 &288303403
 MonoBehaviour:
   m_ObjectHideFlags: 0

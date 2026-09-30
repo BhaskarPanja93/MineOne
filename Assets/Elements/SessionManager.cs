@@ -8,7 +8,6 @@ using Unity.Services.Core;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using Random = UnityEngine.Random;
 
 
 // Behavior for maintaining a session
@@ -24,12 +23,12 @@ public class SessionManager : NetworkBehaviour
     
     
     // Network synced variables
-    public static SessionManager Singleton { get; private set; }
-    public static NetworkList<PlayerData> PlayersList { get; private set; }
-    public static NetworkVariable<bool> GameStarted { get; private set; }
-    public static NetworkVariable<int> GridSize { get; private set; }
-    public static NetworkVariable<FixedString32Bytes> JoinCode { get; private set; }
-    public static NetworkList<CellData> Cells { get; set; }
+    public static SessionManager Singleton;
+    public NetworkList<PlayerData> playersList;
+    public NetworkVariable<bool> gameStarted;
+    public NetworkVariable<int> gridSize;
+    public NetworkVariable<FixedString32Bytes> joinCode;
+    public NetworkList<CellData> cells;
 
     
     // Client -> Server RPC
@@ -41,19 +40,19 @@ public class SessionManager : NetworkBehaviour
     {
         playerData.ClientId = rpcParams.Receive.SenderClientId + 1;
         playerData.Color = Color.HSVToRGB(_lastProvidedHValue, 1, 1);
-        playerData.PlayableState = GameStarted.Value ? PlayableStates.Disqualified : PlayableStates.Playable;
-        PlayersList.Add(playerData);
-        _lastProvidedHValue += 1 / (float)(2 + PlayersList.Count);
+        playerData.PlayableState = gameStarted.Value ? PlayableStates.Disqualified : PlayableStates.Playable;
+        playersList.Add(playerData);
+        _lastProvidedHValue += 1 / (float)(2 + playersList.Count);
     }
 
 
     // Callback for when a player leaves
     private void RemovePlayer(ulong clientId)
     {
-        for (var i = 0; i < PlayersList.Count; i++)
-            if (PlayersList[i].ClientId == clientId + 1)
+        for (var i = 0; i < playersList.Count; i++)
+            if (playersList[i].ClientId == clientId + 1)
             {
-                PlayersList.RemoveAt(i);
+                playersList.RemoveAt(i);
                 break;
             }
     }
@@ -99,7 +98,7 @@ public class SessionManager : NetworkBehaviour
             
             // Create the session and save it
             _currentSession = await MultiplayerService.Instance.CreateSessionAsync(options);
-            JoinCode.Value = _currentSession.Code;
+            joinCode.Value = _currentSession.Code;
             
             
             // Switch to lobby scene for all players
@@ -153,11 +152,11 @@ public class SessionManager : NetworkBehaviour
 
         
         // Initialize the network variables
-        GameStarted = new NetworkVariable<bool>();
-        GridSize = new NetworkVariable<int>();
-        JoinCode = new NetworkVariable<FixedString32Bytes>();
-        PlayersList = new NetworkList<PlayerData>();
-        Cells = new NetworkList<CellData>();
+        gameStarted = new NetworkVariable<bool>();
+        gridSize = new NetworkVariable<int>();
+        joinCode = new NetworkVariable<FixedString32Bytes>();
+        playersList = new NetworkList<PlayerData>();
+        cells = new NetworkList<CellData>();
         
         
         // Initialize other variables
@@ -165,7 +164,7 @@ public class SessionManager : NetworkBehaviour
         
         
         // Map players from list to a dictionary for faster fetching
-        PlayersList.OnListChanged += change =>
+        playersList.OnListChanged += change =>
         {
             switch (change.Type)
             {
@@ -213,7 +212,7 @@ public class SessionManager : NetworkBehaviour
 
 
         // Set initial value of Players dictionary
-        foreach (var playerData in PlayersList)
+        foreach (var playerData in playersList)
         {
             Players[playerData.ClientId] = playerData;
         }
